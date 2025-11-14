@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puter Fun Pad</title>
+  <meta name="description" content="A playful page using Puter.js for uploads, notes, and surprises!">
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', 'Quicksand', sans-serif;
+      background: linear-gradient(120deg, #e3ffe3 60%, #d8e7fc 100%);
+      margin: 0; padding: 0; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #39648e;
+    }
+    .pad-container {
+      background: rgba(255,255,255,0.88);
+      box-shadow: 0 4px 32px #6aa1cf22;
+      border-radius: 18px;
+      padding: 2em 1.35em 1.6em;
+      margin: 2em 0;
+      max-width: 430px;
+      width: 96vw;
+      text-align: center;
+      position: relative;
+    }
+    h1 { margin-bottom: 0.39em; color: #319967; }
+    h2 { margin-top:1.10em; color:#397fa1; font-size:1.23em;}
+    .animated-btn {
+      background: linear-gradient(120deg, #b5ffd8 0%, #e6ddea 100%);
+      border: none;
+      padding: 11px 24px;
+      font-size: 1.07em;
+      border-radius: 57px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: .5em 0;
+      color:#39648e;
+      box-shadow:0 2px 8px #62b09217;
+      transition:background .17s,transform .13s;
+    }
+    .animated-btn:hover { background:linear-gradient(120deg,#e4ffe6 0%, #bbe9ff 100%); transform:scale(1.07);}
+    #user-info { color:#3e9450; margin:1.1em 0 .6em; font-size:.98em;}
+    #image-preview {
+      margin: .7em 0;
+      border-radius:14px;
+      box-shadow:0 6px 22px #84c6e331;
+      max-width:180px;
+    }
+    #notepad {
+      width:97%;
+      height:67px;
+      margin:0.8em 0 0.4em 0;
+      border-radius:12px;
+      border:1.3px solid #98d4c1;
+      background:#f4fcff;
+      padding:10px;
+      resize:vertical;
+      font-size:1em;
+      font-family:inherit;
+    }
+    #pad-status { color:#b68249;font-size:.96em;}
+    footer { margin:2em 0 .5em 0; color:#397fa1; font-size:.96em;}
+  </style>
+</head>
+<body>
+  <div class="pad-container">
+    <h1>Puter Fun Pad 🎉</h1>
+    <div id="user-info">Connecting...</div>
+    <button class="animated-btn" onclick="pickFile()">📤 Upload Image (Puter)</button>
+    <div><img id="image-preview" style="display:none;"></div>
+    <h2>Take a Note!</h2>
+    <textarea id="notepad" placeholder="Write your fun ideas here..."></textarea>
+    <div>
+      <button class="animated-btn" onclick="savePad()">💾 Save Note</button>
+      <button class="animated-btn" onclick="loadPad()">📂 Load Last Note</button>
+    </div>
+    <div id="pad-status"></div>
+  </div>
+  <footer>
+    Powered by <a href="https://puter.com/" target="_blank">Puter.js</a> · Have fun and tip your developer!
+  </footer>
+<script>
+function showUserInfo(text) {
+  document.getElementById('user-info').textContent = text;
+}
+
+// Connect to Puter and show user info if available
+if(window.puter){
+  window.puter.getUser().then(user => {
+    if(user && user.username) {
+      showUserInfo('Hello, ' + user.fullName + ' (' + user.username + ')');
+    } else {
+      showUserInfo('Connected to Puter. Sign in for more features!');
+    }
+  }).catch(() => {
+    showUserInfo('Connected to Puter.');
+  });
+} else {
+  showUserInfo('Could not connect to Puter.js.');
+}
+
+// File Picker Function
+function pickFile() {
+  if(!window.puter){alert('Puter.js not loaded!');return;}
+  puter.files.pick().then((files) => {
+    if(files && files[0]){
+      let file = files[0];
+      puter.files.readAsDataURL(file.id).then(dataUrl => {
+        let img = document.getElementById('image-preview');
+        img.src = dataUrl;
+        img.style.display = 'block';
+      });
+    }
+  }).catch(()=>{alert('Upload cancelled or failed!');});
+}
+
+// Notepad Functions
+function savePad() {
+  const note = document.getElementById('notepad').value;
+  if(!window.puter){alert('Puter.js not loaded!');return;}
+  puter.files.write({
+    name: 'funpad-note.txt',
+    data: note,
+    mimeType: 'text/plain'
+  }).then(()=>{
+    document.getElementById('pad-status').textContent = 'Note saved to Puter!';
+  }).catch(()=>{document.getElementById('pad-status').textContent='Failed to save.';});
+}
+
+function loadPad() {
+  if(!window.puter){alert('Puter.js not loaded!');return;}
+  puter.files.list({match: 'funpad-note.txt'}).then(files=>{
+    if(files && files.length){
+      puter.files.read(files[0].id).then(data=>{
+        document.getElementById('notepad').value = data;
+        document.getElementById('pad-status').textContent='Note loaded!';
+      });
+    } else {
+      document.getElementById('pad-status').textContent='No note found (save one first).';
+    }
+  }).catch(()=>{document.getElementById('pad-status').textContent='Failed to load.';});
+}
+</script>
+</body>
+</html>
